@@ -1,0 +1,1 @@
+let filmeDTO = { "id": "", "image":"","title": "", "original_title": "", "description": "", "release_date": "", "rt_score": "" };

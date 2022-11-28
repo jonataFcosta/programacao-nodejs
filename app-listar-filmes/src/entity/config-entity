@@ -1,0 +1,20 @@
+const conn = require("../../config/db.config");
+const Sequelize = conn.Sequelize;
+const sequelize = conn.sequelize;
+
+const ConfigEntity = sequelize.define('tbl_configs', {
+    baseCarregada: {
+        type: Sequelize.TINYINT
+        , field: 'base_carregada',
+        allowNull: false,
+        primaryKey: false
+    }
+}, {
+    tableName: 'tbl_configs',
+    timestamps: false,
+    primaryKey: false
+});
+
+ConfigEntity.sync({ force: false });
+
+module.exports = ConfigEntity;

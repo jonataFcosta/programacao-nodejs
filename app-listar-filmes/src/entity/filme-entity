@@ -1,0 +1,23 @@
+"use strict";
+const conn = require("../../config/db.config");
+const Sequelize = conn.Sequelize;
+const sequelize = conn.sequelize;
+
+const FilmeEntity = sequelize.define('tbl_filmes', {  
+    id: { field: 'id',type:Sequelize.STRING, allowNull: false, primaryKey: true },
+    image: Sequelize.STRING,
+    original_title: Sequelize.STRING,
+    release_date: Sequelize.INTEGER,
+    rt_score: Sequelize.INTEGER,
+    title: Sequelize.STRING,
+    description: Sequelize.TEXT
+}, {
+    tableName: 'tbl_filmes',
+    timestamps: false,
+    primaryKey: false
+});
+
+
+FilmeEntity.sync({ force: false });
+
+module.exports = FilmeEntity;

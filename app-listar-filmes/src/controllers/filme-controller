@@ -1,0 +1,345 @@
+
+const FilmeService = require('../services/filme-service');
+const FilmeDTO = require('../dto/filme-dto');
+const conn = require('../../config/db.config');
+
+const ConfigDAO = require('../dao/config-dao');
+const FilmeDAO = require('../dao/filme-dao');
+
+module.exports.limparTblFilmes = function (req, res, next) {
+
+    FilmeDAO.limparTblFilmes();
+    ConfigDAO.update(0);
+
+    res.status(200).redirect('/heroku/filmes/');
+
+}
+
+
+
+module.exports.listarHEROKU = function (req, res, next) {
+
+    const dataListApi = [];
+
+    res.setHeader('Content-type', 'text/html');
+
+    const result = FilmeService.listar(process.env.TOTAL_LISTA, process.env.FIELDS_LISTA).then(r => {
+
+        for (var i = 0; i < r.data.length; i++) {
+            let filme = JSON.parse(JSON.stringify(FilmeDTO));
+
+            let f = r.data[i];
+            filme.id = f.id;
+            filme.title = f.title;
+            filme.original_title = f.original_title;
+            filme.description = f.description;
+            filme.release_date = f.release_date;
+            filme.rt_score = f.rt_score;
+            filme.image = f.image;
+            dataListApi.push(filme);
+        }
+
+        res.status(r.status).render("lista-heroku-view",
+            {
+                "data": dataListApi,
+                "totalRegs": dataListApi.length,
+                "baseCarregada": verificarBaseCarregada()
+            });
+    });
+
+}
+
+module.exports.listarAPI = async function (req, res, next) {
+
+    const dataListDB = [];
+ //   let Retorno = {'status':200,'totalRegistros':0,'limit':req.params.limit,'offset':req.params.offset, 'data':[],'error':{}};
+
+    res.setHeader('Content-type','application/json');
+
+    
+    let limit = (req.params.limit && req.params.limit>0)?parseInt(req.params.limit):5;
+    let offset = (req.params.page && req.params.page>0)?((parseInt(req.params.page)-1) * limit):0;
+
+   result= FilmeDAO.listarAPI(limit, offset).then(function(r){
+
+    if(r!=null && r!=null){
+        for (var i = 0; i < r.length; i++) {
+            let filme = JSON.parse(JSON.stringify(FilmeDTO));
+
+            let f = r[i];
+            filme.id = f.id;
+            filme.title = f.title;
+            filme.original_title = f.original_title;
+            filme.description = f.description;
+            filme.release_date = f.release_date;
+            filme.rt_score = f.rt_score;
+            filme.image = f.image;
+            dataListDB.push(filme);
+
+        }
+    }
+
+        res.status(200).json({
+            'status':200,
+            'totalRegistros':dataListDB.length,
+            'limit':limit,
+            'offset':offset, 
+            'data':dataListDB,
+            'error':{}
+        });
+    }).catch(function(err){
+
+        res.status(500).json({
+            'status':500,
+            'totalRegistros':dataListDB.length,
+            'limit':req.params.limit,
+            'offset':req.params.offset, 
+            'data':dataListDB,
+            'error':err
+        });
+    });
+ 
+
+    
+
+}
+
+
+module.exports.findId = function (req, res, next) {
+
+    res.setHeader('Content-type', 'text/html');
+    res.status(200).render("lista-view",
+        {
+            "data": [],
+            "totalRegs": 0,
+            "arrPages": getPaginator(0, 1),
+            "pgAtual": 1
+        });
+
+}
+
+module.exports.createHEROKU = function (req, res, next) {
+
+    const dataListDB = [];
+
+    let Retorno = {'totalregistros':0,'totalInsert':0,'totaUpdate':0,'totalError':0};
+
+    if(req.body!=null && req.body!=undefined && req.body.id!=null){
+        
+       isCarregada= verificarBaseCarregada();
+
+       if(!isCarregada){
+
+            let ids=req.body.id;
+            let images=req.body.image;
+            let titles=req.body.title;
+            let original_titles=req.body.original_title;
+            let descriptions=req.body.description;
+            let release_dates=req.body.release_date;
+            let rt_scores=req.body.rt_score;
+
+        for(var i=0;i<ids.length;i++){
+
+            let filme = JSON.parse(JSON.stringify(FilmeDTO));
+
+            filme.id = ids[i];
+            filme.title = titles[i];
+            filme.original_title = original_titles[i];
+            filme.description = descriptions[i];
+            filme.release_date = release_dates[i];
+            filme.rt_score = rt_scores[i];
+            filme.image = images[i];
+            dataListDB.push(filme);
+
+        }
+
+        if(dataListDB!=null && dataListDB!=undefined && dataListDB.length>0){
+
+            dataListDB.forEach(f => {
+                FilmeDAO.create(f).then(function(r){
+                    Retorno.totalInsert+=1;
+                }).catch(function(err){
+                    Retorno.totalError+=1;
+                });
+            });
+
+            ConfigDAO.update(1);
+
+        }
+        
+
+
+       }
+
+    }
+ //   res.status(200).send(dataListDB);
+    res.status(200).redirect('/heroku/filmes');
+
+}
+
+
+module.exports.create = function (req, res, next) {
+
+    const dataListDB = [];
+
+    let Retorno = {'totalregistros':0,'totalInsert':0,'totaUpdate':0,'totalError':0};
+
+    if(req.body!=null && req.body!=undefined && req.body.id!=null){
+        
+     
+
+            let ids=req.body.id;
+            let images=req.body.image;
+            let titles=req.body.title;
+            let original_titles=req.body.original_title;
+            let descriptions=req.body.description;
+            let release_dates=req.body.release_date;
+            let rt_scores=req.body.rt_score;
+
+     //   for(var i=0;i<ids.length;i++){
+
+            let filme = JSON.parse(JSON.stringify(FilmeDTO));
+
+            filme.id = ids;
+            filme.title = titles;
+            filme.original_title = original_titles;
+            filme.description = descriptions;
+            filme.release_date = release_dates;
+            filme.rt_score = rt_scores;
+            filme.image = images;
+            dataListDB.push(filme);
+
+//        }
+
+        if(dataListDB!=null && dataListDB!=undefined && dataListDB.length>0){
+
+            dataListDB.forEach(f => {
+                FilmeDAO.create(f).then(function(r){
+                    Retorno.totalInsert+=1;
+                }).catch(function(err){
+                    Retorno.totalError+=1;
+                });
+            });
+
+         //   ConfigDAO.update(1);
+        }
+
+
+    }
+ //   res.status(200).send(dataListDB);
+    res.status(200).json(Retorno);
+
+}
+
+
+
+module.exports.update = function (req, res, next) {
+
+    const dataListDB = [];
+
+    let Retorno = {'totalregistros':0,'totalInsert':0,'totaUpdate':0,'totalError':0};
+
+    if(req.body!=null && req.body!=undefined && req.body.id!=null){
+
+
+            let ids=req.body.id;
+            let images=req.body.image;
+            let titles=req.body.title;
+            let original_titles=req.body.original_title;
+            let descriptions=req.body.description;
+            let release_dates=req.body.release_date;
+            let rt_scores=req.body.rt_score;
+
+     //   for(var i=0;i<ids.length;i++){
+
+            let filme = JSON.parse(JSON.stringify(FilmeDTO));
+
+            filme.id = ids;
+            filme.title = titles;
+            filme.original_title = original_titles;
+            filme.description = descriptions;
+            filme.release_date = release_dates;
+            filme.rt_score = rt_scores;
+            filme.image = images;
+            dataListDB.push(filme);
+
+//        }
+
+        if(dataListDB!=null && dataListDB!=undefined && dataListDB.length>0){
+
+            dataListDB.forEach(f => {
+                FilmeDAO.update(f).then(function(r){
+                    Retorno.totalInsert+=1;
+                }).catch(function(err){
+                    Retorno.totalError+=1;
+                });
+            });
+
+         //   ConfigDAO.update(1);
+        }
+
+       
+
+    }
+ //   res.status(200).send(dataListDB);
+    res.status(200).json(Retorno);
+
+}
+
+module.exports.delete = function (req, res, next) {
+
+    const dataListDB = [];
+
+    let Retorno = {'totalregistros':0,'totalInsert':0,'totaUpdate':0,'totalError':0};
+
+    if(req.body!=null && req.body!=undefined && req.body.id!=null){
+
+
+            let ids=req.params.id;
+
+     //   for(var i=0;i<ids.length;i++){
+
+            let filme = JSON.parse(JSON.stringify(FilmeDTO));
+
+            filme.id = ids;
+  
+
+//        }
+
+        if(dataListDB!=null && dataListDB!=undefined && dataListDB.length>0){
+
+            dataListDB.forEach(f => {
+                FilmeDAO.delete(f).then(function(r){
+                    Retorno.totalInsert+=1;
+                }).catch(function(err){
+                    Retorno.totalError+=1;
+                });
+            });
+
+         //   ConfigDAO.update(1);
+        }
+
+       
+
+    }
+ //   res.status(200).send(dataListDB);
+    res.status(200).json(Retorno);
+
+}
+
+//descontinuada
+function verificarBaseCarregada(){
+
+    let retorno = false;
+
+    ConfigDAO.verificarBaseCarregada().then(function(r){
+
+        if(r && r.length>0 && r[0]==1){
+            retorno = true;
+        }
+
+    }).catch(function(err){
+        console.log(err);
+    });
+    return retorno; 
+}
